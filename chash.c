@@ -1,5 +1,8 @@
 #include <stdio.h>
-#include <stdint.h>  // Needed for uint32_t
+#include <stdint.h> 
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
 #include "rwlock.h"
 
 typedef struct hash_struct {
@@ -23,6 +26,7 @@ uint32_t jenkins_one_at_a_time_hash(const char *key) {
     return hash;
 }  
 
+hashRecord *head = NULL;
 int read_loops;
 int write_loops;
 int counter = 0;
@@ -50,6 +54,18 @@ void *writer(void *arg) {
     }
     printf("write done\n");
     return NULL;
+}
+
+void insert(char *name, uint32_t salary){
+
+}
+
+void delete(char *name){
+
+}
+
+uint32_t search(char *name){
+
 }
 
 int main(int argc, char *argv[]) {
