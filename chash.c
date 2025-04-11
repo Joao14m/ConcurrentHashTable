@@ -4,22 +4,18 @@
 #include <string.h>
 #include <pthread.h>
 #include "rwlock.h"
-
-typedef struct hash_struct {
-    uint32_t hash;
-    char name[50];
-    uint32_t salary;
-    struct hash_struct *next;
-} hashRecord;
+#include "utils.c"
 
 uint32_t jenkins_one_at_a_time_hash(const char *key) {
     uint32_t hash = 0;
+    
     while (*key) {
       hash += (unsigned char)(*key);
       hash += (hash << 10);
       hash ^= (hash >> 6);
       key++;
     }
+    
     hash += (hash << 3);
     hash ^= (hash >> 11);
     hash += (hash << 15);
@@ -32,29 +28,17 @@ int write_loops;
 int counter = 0;
 rwlock_t mutex;
 
-void *reader(void *arg) {
-    int i;
-    int local = 0;
-    for (i = 0; i < read_loops; i++) {
-	rwlock_acquire_readlock(&mutex);
-	local = counter;
-	rwlock_release_readlock(&mutex);
-	printf("read %d\n", local);
-    }
-    printf("read done: %d\n", local);
-    return NULL;
-}
+static const char COMMAND_FILE[] = "commands.txt";
+static const char OUTPUT_FILE[] = "output.txt"; 
 
-void *writer(void *arg) {
-    int i;
-    for (i = 0; i < write_loops; i++) {
-	rwlock_acquire_writelock(&mutex);
-	counter++;
-	rwlock_release_writelock(&mutex);
-    }
-    printf("write done\n");
-    return NULL;
-}
+pthread_mutex_t condMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
+FILE* fp;
+FILE* out;
+
+int lockAcquire = 0;
+int lockRelease = 0;
 
 void insert(char *name, uint32_t salary){
 
@@ -69,6 +53,58 @@ uint32_t search(char *name){
 }
 
 int main(int argc, char *argv[]) {
+    fp = fopen(COMMAND_FILE, "r");
+    out = fopen(OUTPUT_FILE, "w");
+
+    if(fp == NULL){
+        fprintf(stderr, "Error: File not found");
+        exit(EXIT_FAILURE);
+    }
+
+    if(out == NULL){
+        fprintf(stderr, "Error opening file");
+        exit(EXIT_FAILURE);
+    }
+
+    rwlock_init(&mutex);
+
+    int numThreads = 0;
+    char strs[2][50];
+    char command[50]; 
+
+    pthread_t threads[numThreads];
+    hashRecord* arr = malloc(sizeof(hashRecord));
     
+    fscanf(fp, "%[^,],%d,%s", strs[0], &numThreads, strs[1]);
+    fprint(out, "Running %d threads\n", numThreads);
+
+    for(int i = 0; i < numThreads; i++){
+        fscanf(fp, "%[^,],%[^,],%d", command, arr->name, &arr->salary);
+
+        if(strcmp(command, "insert") == 0){
+            pthread_create(&threads[i], NULL, insert_t, arr);
+        } else if(strcmp(command, "delete") == 0){
+            pthread_create(&threads[i], NULL, delete_t, arr);
+        } else if(strcmp(command, "search") == 0){
+            pthread_create(&threads[i], NULL, search_t, arr);
+        } else {
+            free(arr);
+            fclose(fp);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    for(int i = 0; i < numThreads; i++){
+        pthread_join(threads[i], NULL);
+    }
+
+    fprintf(out, "Finished all threads.\n");
+    fprintf(out, "Number of lock acquisitions: %d\n", lockAcquire);
+    fprintf(out, "Number of lock releases: %d\n", lockRelease);
+
+    free(arr);
+    fclose(fp);
+    fclose(out);
+
     return 0;
 }

@@ -1,26 +1,5 @@
 #include "rwlock.h"
 
-// void Zem_init(Zem_t *z, int value) {
-//     z->value = value;
-//     Cond_init(&z->cond);
-//     Mutex_init(&z->lock);
-// }
-
-// void Zem_wait(Zem_t *z) {
-//     Mutex_lock(&z->lock);
-//     while (z->value <= 0)
-// 	Cond_wait(&z->cond, &z->lock);
-//     z->value--;
-//     Mutex_unlock(&z->lock);
-// }
-
-// void Zem_post(Zem_t *z) {
-//     Mutex_lock(&z->lock);
-//     z->value++;
-//     Cond_signal(&z->cond);
-//     Mutex_unlock(&z->lock);
-// }
-
 void rwlock_init(rwlock_t *lock) {
     lock->readers = 0;
     Sem_init(&lock->lock, 1); 

@@ -1,13 +1,8 @@
 #include <pthread.h>
 #include <semaphore.h>
-
-// typedef struct __Zem_t {
-//     int value;
-//     pthread_cond_t  cond;
-//     pthread_mutex_t lock;
-// } Zem_t;
-
-// typedef Zem_t sem_t;
+#include <stdio.h>
+#include <semaphore.h>
+#include <stdlib.h>
 
 typedef struct _rwlock_t {
     sem_t writelock;
@@ -15,11 +10,12 @@ typedef struct _rwlock_t {
     int readers;
 } rwlock_t;
 
-// void Zem_init(Zem_t *z, int value);
-
-// void Zem_wait(Zem_t *z);
-
-// void Zem_post(Zem_t *z);
+typedef struct hash_struct {
+    uint32_t hash;
+    char name[50];
+    uint32_t salary;
+    struct hash_struct *next;
+} hashRecord;
 
 void rwlock_init(rwlock_t *lock);
 
